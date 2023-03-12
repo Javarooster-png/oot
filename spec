@@ -123,17 +123,17 @@ endseg
 beginseg
     name "Audiobank"
     address 0x10 // fake RAM address to avoid map lookup inaccuracies
-    include "build/baserom/Audiobank.o"
+    include "build/data/Audiobank.o"
 endseg
 
 beginseg
     name "Audioseq"
-    include "build/baserom/Audioseq.o"
+    include "build/data/Audioseq.o"
 endseg
 
 beginseg
     name "Audiotable"
-    include "build/baserom/Audiotable.o"
+    include "build/data/Audiotable.o"
 endseg
 
 beginseg
