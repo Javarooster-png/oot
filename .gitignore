@@ -16,7 +16,6 @@ build/
 expected/
 notes/
 baserom/
-sound/
 docs/doxygen/
 *.elf
 *.sra
@@ -55,4 +54,3 @@ graphs/
 
 # Per-user configuration
 .python-version
-src/code/audio_init_params.c
