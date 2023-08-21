@@ -1,5 +1,7 @@
 # The Legend of Zelda: Ocarina of Time
 
+Thank you to AriaHiro for providing the necessary information to make this fork. I have uploaded it for easy access and am doing my best to keep it up to date with the latest version of decomp until the audio pr gets merged.
+
 [![Build Status][jenkins-badge]][jenkins] [![Decompilation Progress][progress-badge]][progress] [![Contributors][contributors-badge]][contributors] [![Discord Channel][discord-badge]][discord]
 
 [jenkins]: https://jenkins.deco.mp/job/OOT/job/master
