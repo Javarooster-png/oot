@@ -8,7 +8,7 @@ Input* D_8012D1F8 = NULL;
 
 TransitionTile sTransitionTile;
 s32 gTransitionTileState;
-VisMono D_80161498;
+VisMono sPlayVisMono;
 Color_RGBA8_u32 gVisMonoColor;
 FaultClient D_801614B8;
 s16 sTransitionFillTimer;
@@ -199,7 +199,7 @@ void Play_Destroy(GameState* thisx) {
 
     Letterbox_Destroy();
     TransitionFade_Destroy(&this->transitionFadeFlash);
-    VisMono_Destroy(&D_80161498);
+    VisMono_Destroy(&sPlayVisMono);
 
     if (gSaveContext.save.linkAge != this->linkAgeOnLoad) {
         Inventory_SwapAgeEquipment();
@@ -390,7 +390,7 @@ void Play_Init(GameState* thisx) {
     TransitionFade_SetType(&this->transitionFadeFlash, TRANS_INSTANCE_TYPE_FADE_FLASH);
     TransitionFade_SetColor(&this->transitionFadeFlash, RGBA8(160, 160, 160, 255));
     TransitionFade_Start(&this->transitionFadeFlash);
-    VisMono_Init(&D_80161498);
+    VisMono_Init(&sPlayVisMono);
     gVisMonoColor.a = 0;
     CutsceneFlags_UnsetAll(this);
 
@@ -400,7 +400,8 @@ void Play_Init(GameState* thisx) {
     zAllocAligned = (zAlloc + 8) & ~0xF;
     ZeldaArena_Init((void*)zAllocAligned, zAllocSize - (zAllocAligned - zAlloc));
     // "Zelda Heap"
-    osSyncPrintf("ゼルダヒープ %08x-%08x\n", zAllocAligned, zAllocAligned + zAllocSize - (s32)(zAllocAligned - zAlloc));
+    osSyncPrintf("ゼルダヒープ %08x-%08x\n", zAllocAligned,
+                 (u8*)zAllocAligned + zAllocSize - (s32)(zAllocAligned - zAlloc));
 
     Fault_AddClient(&D_801614B8, ZeldaArena_Display, NULL, NULL);
     Actor_InitContext(this, &this->actorCtx, this->playerEntry);
@@ -447,7 +448,7 @@ void Play_Init(GameState* thisx) {
 
 void Play_Update(PlayState* this) {
     s32 pad1;
-    s32 sp80;
+    s32 isPaused;
     Input* input;
     u32 i;
     s32 pad2;
@@ -482,8 +483,8 @@ void Play_Update(PlayState* this) {
         ActorOverlayTable_LogPrint();
     }
 
-    gSegments[4] = VIRTUAL_TO_PHYSICAL(this->objectCtx.status[this->objectCtx.mainKeepIndex].segment);
-    gSegments[5] = VIRTUAL_TO_PHYSICAL(this->objectCtx.status[this->objectCtx.subKeepIndex].segment);
+    gSegments[4] = VIRTUAL_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
+    gSegments[5] = VIRTUAL_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
     gSegments[2] = VIRTUAL_TO_PHYSICAL(this->sceneSegment);
 
     if (FrameAdvance_Update(&this->frameAdvCtx, &input[1])) {
@@ -849,17 +850,17 @@ void Play_Update(PlayState* this) {
             }
 
             PLAY_LOG(3551);
-            sp80 = (this->pauseCtx.state != 0) || (this->pauseCtx.debugState != 0);
+            isPaused = IS_PAUSED(&this->pauseCtx);
 
             PLAY_LOG(3555);
             AnimationContext_Reset(&this->animationCtx);
 
             PLAY_LOG(3561);
-            Object_UpdateBank(&this->objectCtx);
+            Object_UpdateEntries(&this->objectCtx);
 
             PLAY_LOG(3577);
 
-            if ((sp80 == 0) && (IREG(72) == 0)) {
+            if (!isPaused && (IREG(72) == 0)) {
                 PLAY_LOG(3580);
 
                 this->gameplayFrames++;
@@ -926,7 +927,7 @@ void Play_Update(PlayState* this) {
 
             if (this->viewpoint != VIEWPOINT_NONE) {
                 if (CHECK_BTN_ALL(input[0].press.button, BTN_CUP)) {
-                    if ((this->pauseCtx.state != 0) || (this->pauseCtx.debugState != 0)) {
+                    if (IS_PAUSED(&this->pauseCtx)) {
                         // "Changing viewpoint is prohibited due to the kaleidoscope"
                         osSyncPrintf(VT_FGCOL(CYAN) "カレイドスコープ中につき視点変更を禁止しております\n" VT_RST);
                     } else if (Player_InCsMode(this)) {
@@ -950,7 +951,7 @@ void Play_Update(PlayState* this) {
 
             PLAY_LOG(3716);
 
-            if ((this->pauseCtx.state != 0) || (this->pauseCtx.debugState != 0)) {
+            if (IS_PAUSED(&this->pauseCtx)) {
                 PLAY_LOG(3721);
                 KaleidoScopeCall_Update(this);
             } else if (this->gameOverCtx.state != GAMEOVER_INACTIVE) {
@@ -987,7 +988,7 @@ void Play_Update(PlayState* this) {
 skip:
     PLAY_LOG(3801);
 
-    if ((sp80 == 0) || gDebugCamEnabled) {
+    if (!isPaused || gDebugCamEnabled) {
         s32 pad3[5];
         s32 i;
 
@@ -1013,7 +1014,7 @@ skip:
 }
 
 void Play_DrawOverlayElements(PlayState* this) {
-    if ((this->pauseCtx.state != 0) || (this->pauseCtx.debugState != 0)) {
+    if (IS_PAUSED(&this->pauseCtx)) {
         KaleidoScopeCall_Draw(this);
     }
 
@@ -1035,21 +1036,21 @@ void Play_Draw(PlayState* this) {
 
     OPEN_DISPS(gfxCtx, "../z_play.c", 3907);
 
-    gSegments[4] = VIRTUAL_TO_PHYSICAL(this->objectCtx.status[this->objectCtx.mainKeepIndex].segment);
-    gSegments[5] = VIRTUAL_TO_PHYSICAL(this->objectCtx.status[this->objectCtx.subKeepIndex].segment);
+    gSegments[4] = VIRTUAL_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
+    gSegments[5] = VIRTUAL_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
     gSegments[2] = VIRTUAL_TO_PHYSICAL(this->sceneSegment);
 
     gSPSegment(POLY_OPA_DISP++, 0x00, NULL);
     gSPSegment(POLY_XLU_DISP++, 0x00, NULL);
     gSPSegment(OVERLAY_DISP++, 0x00, NULL);
 
-    gSPSegment(POLY_OPA_DISP++, 0x04, this->objectCtx.status[this->objectCtx.mainKeepIndex].segment);
-    gSPSegment(POLY_XLU_DISP++, 0x04, this->objectCtx.status[this->objectCtx.mainKeepIndex].segment);
-    gSPSegment(OVERLAY_DISP++, 0x04, this->objectCtx.status[this->objectCtx.mainKeepIndex].segment);
+    gSPSegment(POLY_OPA_DISP++, 0x04, this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
+    gSPSegment(POLY_XLU_DISP++, 0x04, this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
+    gSPSegment(OVERLAY_DISP++, 0x04, this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
 
-    gSPSegment(POLY_OPA_DISP++, 0x05, this->objectCtx.status[this->objectCtx.subKeepIndex].segment);
-    gSPSegment(POLY_XLU_DISP++, 0x05, this->objectCtx.status[this->objectCtx.subKeepIndex].segment);
-    gSPSegment(OVERLAY_DISP++, 0x05, this->objectCtx.status[this->objectCtx.subKeepIndex].segment);
+    gSPSegment(POLY_OPA_DISP++, 0x05, this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
+    gSPSegment(POLY_XLU_DISP++, 0x05, this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
+    gSPSegment(OVERLAY_DISP++, 0x05, this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
 
     gSPSegment(POLY_OPA_DISP++, 0x02, this->sceneSegment);
     gSPSegment(POLY_XLU_DISP++, 0x02, this->sceneSegment);
@@ -1103,8 +1104,8 @@ void Play_Draw(PlayState* this) {
             TransitionFade_Draw(&this->transitionFadeFlash, &gfxP);
 
             if (gVisMonoColor.a > 0) {
-                D_80161498.primColor.rgba = gVisMonoColor.rgba;
-                VisMono_Draw(&D_80161498, &gfxP);
+                sPlayVisMono.vis.primColor.rgba = gVisMonoColor.rgba;
+                VisMono_Draw(&sPlayVisMono, &gfxP);
             }
 
             gSPEndDisplayList(gfxP++);
@@ -1336,7 +1337,7 @@ void Play_Main(GameState* thisx) {
 }
 
 // original name: "Game_play_demo_mode_check"
-s32 Play_InCsMode(PlayState* this) {
+int Play_InCsMode(PlayState* this) {
     return (this->csCtx.state != CS_STATE_IDLE) || Player_InCsMode(this);
 }
 
@@ -1434,7 +1435,7 @@ void Play_InitScene(PlayState* this, s32 spawn) {
 
     this->numActorEntries = 0;
 
-    Object_InitBank(this, &this->objectCtx);
+    Object_InitContext(this, &this->objectCtx);
     LightContext_Init(this, &this->lightCtx);
     TransitionActor_InitContext(&this->state, &this->transiActorCtx);
     func_80096FD4(this, &this->roomCtx.curRoom);
@@ -1446,6 +1447,7 @@ void Play_InitScene(PlayState* this, s32 spawn) {
 
 void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     SceneTableEntry* scene = &gSceneTable[sceneId];
+    u32 size;
 
     scene->unk_13 = 0;
     this->loadedScene = scene;
@@ -1462,7 +1464,9 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
 
     Play_InitScene(this, spawn);
 
-    osSyncPrintf("ROOM SIZE=%fK\n", func_80096FE8(this, &this->roomCtx) / 1024.0f);
+    size = func_80096FE8(this, &this->roomCtx);
+
+    osSyncPrintf("ROOM SIZE=%fK\n", size / 1024.0f);
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* src, Vec3f* dest) {
@@ -1773,7 +1777,7 @@ void Play_TriggerRespawn(PlayState* this) {
     Play_LoadToLastEntrance(this);
 }
 
-s32 Play_CamIsNotFixed(PlayState* this) {
+int Play_CamIsNotFixed(PlayState* this) {
     // SCENE_CAM_TYPE_FIXED_SHOP_VIEWPOINT was probably intended to be in this condition,
     // but the room shape type check handles all shop cases regardless
     return (this->roomCtx.curRoom.roomShape->base.type != ROOM_SHAPE_TYPE_IMAGE) &&
@@ -1781,7 +1785,7 @@ s32 Play_CamIsNotFixed(PlayState* this) {
            (R_SCENE_CAM_TYPE != SCENE_CAM_TYPE_FIXED_MARKET) && (this->sceneId != SCENE_CASTLE_COURTYARD_GUARDS_DAY);
 }
 
-s32 FrameAdvance_IsEnabled(PlayState* this) {
+int FrameAdvance_IsEnabled(PlayState* this) {
     return !!this->frameAdvCtx.enabled;
 }
 
