@@ -198,7 +198,7 @@ static SceneSelectEntry sScenes[] = {
     // "85: Ganon's Tower - Boss"
     { "85:" GFXP_KATAKANA "ｶﾞﾉﾝ" GFXP_HIRAGANA "ﾉﾄｳ" GFXP_KATAKANA "ﾎﾞｽ", MapSelect_LoadGame, ENTR_GANONDORF_BOSS_0 },
     // "86: Ice Cavern"
-    { "86:" GFXP_HIRAGANA "ｺｵﾘﾉﾄﾞｳｸﾂ", MapSelect_LoadGame, ENTR_ICE_CAVERN_0 },
+    { "86:" GFXP_HIRAGANA "IceCavern", MapSelect_LoadGame, ENTR_ICE_CAVERN_0 },
     // "87: Relay Beneath the Graves" (Dampé's Grave)
     { "87:" GFXP_HIRAGANA "ﾊｶｼﾀ" GFXP_KATAKANA "ﾘﾚｰ", MapSelect_LoadGame, ENTR_WINDMILL_AND_DAMPES_GRAVE_0 },
     // "88: Ganon's Basement Dungeon"
