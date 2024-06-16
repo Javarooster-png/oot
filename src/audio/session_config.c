@@ -12,9 +12,9 @@ const s16 D_8014A6C0[] = {
 
 // TODO: Extract from table?
 #define NUM_SOUNDFONTS 38
-#define SFX_SEQ_SIZE 0x6A90
-#define SFX_SOUNDFONT_1_SIZE 0x3AA0
-#define SFX_SOUNDFONT_2_SIZE 0x17B0
+#define SFX_SEQ_SIZE 0x7A90
+#define SFX_SOUNDFONT_1_SIZE 0x5000
+#define SFX_SOUNDFONT_2_SIZE 0x2A00
 
 // Sizes of everything on the init pool
 #define AI_BUFFERS_SIZE (AIBUF_SIZE * ARRAY_COUNT(gAudioCtx.aiBuffers))

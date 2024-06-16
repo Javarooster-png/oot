@@ -8,15 +8,18 @@
 .section .rodata
 
 .balign 16
-
 glabel gSoundFontTable
-    .incbin "baserom.z64", 0xBCC270, 0x270
+    .incbin "sound/table_font.bin"
 
+.balign 16
 glabel gSequenceFontTable
-    .incbin "baserom.z64", 0xBCC4E0, 0x1C0
+    .incbin "sound/table_seqfont.bin"
 
+.balign 16
 glabel gSequenceTable
-    .incbin "baserom.z64", 0xBCC6A0, 0x6F0
+    .incbin "sound/table_seq.bin"
 
+.balign 16
 glabel gSampleBankTable
-    .incbin "baserom.z64", 0xBCCD90, 0x80
+    .incbin "sound/table_sample.bin"
+
